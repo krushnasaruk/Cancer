@@ -1,0 +1,241 @@
+<mujoco model="sesame_robot">
+  <compiler angle="radian" coordinate="local" inertiafromgeom="true"/>
+  
+  <option timestep="0.002" gravity="0 0 -9.81" iterations="50" solver="Newton" cone="elliptic" integrator="implicitfast"/>
+
+  <visual>
+    <headlight ambient="0.60 0.60 0.65" diffuse="0.95 0.95 0.98" specular="0.4 0.4 0.4"/>
+    <rgba haze="0.06 0.08 0.12 1"/>
+    <global offwidth="1920" offheight="1080"/>
+    <quality shadowsize="4096"/>
+  </visual>
+
+  <default>
+    <joint damping="0.08" armature="0.005" frictionloss="0.005"/>
+    <geom contype="1" conaffinity="1" condim="4" friction="0.85 0.01 0.001" margin="0.0005"/>
+    <position ctrllimited="true" forcelimited="true" forcerange="-5.0 5.0" kp="50.0" kv="2.0"/>
+    
+    <default class="visual_geom">
+      <geom contype="0" conaffinity="0" group="1"/>
+    </default>
+    
+    <default class="collision_geom">
+      <geom contype="1" conaffinity="1" group="0"/>
+    </default>
+
+    <default class="foot_geom">
+      <geom type="sphere" size="0.008" condim="4" friction="0.95 0.015 0.002" solref="0.01 1" solimp="0.9 0.95 0.001"/>
+    </default>
+  </default>
+
+  <asset>
+    <!-- Studio Textures -->
+    <texture type="skybox" builtin="gradient" rgb1="0.18 0.22 0.30" rgb2="0.06 0.08 0.12" width="512" height="512"/>
+    <texture name="grid_tex" type="2d" builtin="checker" width="512" height="512" rgb1="0.10 0.12 0.16" rgb2="0.15 0.18 0.24"/>
+    <material name="grid_mat" texture="grid_tex" texrepeat="25 25" reflectance="0.18" roughness="0.5"/>
+    
+    <!-- Authentic Robot Materials -->
+    <material name="chassis_mat" rgba="0.12 0.14 0.18 1.0" roughness="0.35" specular="0.7"/>
+    <material name="cyan_shell_mat" rgba="0.0 0.88 1.0 1.0" roughness="0.15" specular="0.95"/>
+    <material name="oled_face_mat" rgba="0.0 0.98 1.0 1.0" emission="1.0"/>
+    <material name="oled_glass_mat" rgba="0.02 0.03 0.05 1.0" roughness="0.05" specular="1.0"/>
+    <material name="femur_mat" rgba="0.20 0.23 0.28 1.0" roughness="0.3" specular="0.5"/>
+    <material name="tibia_mat" rgba="0.28 0.32 0.38 1.0" roughness="0.25" specular="0.6"/>
+    <material name="servo_mat" rgba="0.08 0.09 0.12 1.0" roughness="0.4" specular="0.3"/>
+    <material name="servo_horn_mat" rgba="1.0 0.48 0.0 1.0" roughness="0.2" specular="0.85"/>
+    <material name="foot_tip_mat" rgba="0.0 0.98 0.88 1.0" roughness="0.6" specular="0.4" emission="0.5"/>
+  </asset>
+
+  <worldbody>
+    <!-- Studio Lighting Rig -->
+    <light directional="true" pos="1.5 -1.5 4.0" dir="-0.3 0.3 -1" diffuse="1.0 1.0 1.0" specular="0.5 0.5 0.5" castshadow="true"/>
+    <light directional="true" pos="-2 2 3.5" dir="0.4 -0.4 -0.8" diffuse="0.6 0.65 0.75" specular="0.2 0.2 0.2"/>
+    <light pos="0 0 1.8" dir="0 0 -1" diffuse="0.5 0.55 0.65" mode="trackcom"/>
+    
+    <!-- Floor Plane -->
+    <geom name="floor" type="plane" pos="0 0 0" size="15 15 0.1" material="grid_mat" condim="4"/>
+
+    <!-- Target Marker for Reaching RL Tasks -->
+    <body name="target_marker" pos="0.10 0.0 0.02" mocap="true">
+      <geom name="target_geom" type="sphere" size="0.012" rgba="0.0 0.95 0.6 0.75" contype="0" conaffinity="0"/>
+      <site name="target_site" size="0.005" rgba="0 1 0.6 1"/>
+    </body>
+
+    <!-- Sesame Quadruped Robot Root Body -->
+    <body name="base_link" pos="0 0 0.10">
+      <freejoint name="root"/>
+      
+      <!-- Physics Collision Box (Length=105mm, Width=78mm, Height=48mm) -->
+      <geom name="chassis_col" class="collision_geom" type="box" size="0.0525 0.039 0.024" mass="0.210" material="chassis_mat"/>
+      
+      <!-- Sleek Sesame Main Chassis Visual Geometry -->
+      <geom name="chassis_main_vis" class="visual_geom" type="box" size="0.051 0.037 0.023" material="chassis_mat"/>
+      <geom name="chassis_top_shell" class="visual_geom" type="box" pos="0 0 0.0235" size="0.0515 0.0375 0.002" material="cyan_shell_mat"/>
+      <geom name="chassis_bottom_plate" class="visual_geom" type="box" pos="0 0 -0.0235" size="0.048 0.035 0.0015" material="chassis_mat"/>
+      
+      <!-- Side Accent Stripes -->
+      <geom name="chassis_stripe_l" class="visual_geom" type="box" pos="0 0.0375 0.010" size="0.045 0.001 0.003" material="cyan_shell_mat"/>
+      <geom name="chassis_stripe_r" class="visual_geom" type="box" pos="0 -0.0375 0.010" size="0.045 0.001 0.003" material="cyan_shell_mat"/>
+
+      <!-- Glowing OLED Screen Face (Animated Eyes) -->
+      <geom name="oled_glass_vis" class="visual_geom" type="box" pos="0.0515 0 0.004" size="0.001 0.024 0.015" material="oled_glass_mat"/>
+      <geom name="oled_eye_left" class="visual_geom" type="box" pos="0.0522 0.010 0.005" size="0.0006 0.005 0.006" material="oled_face_mat"/>
+      <geom name="oled_eye_right" class="visual_geom" type="box" pos="0.0522 -0.010 0.005" size="0.0006 0.005 0.006" material="oled_face_mat"/>
+      
+      <!-- 4 Onboard Hip MG90S Servos Enclosure -->
+      <geom name="fl_hip_servo" class="visual_geom" type="box" pos="0.036 0.032 0" size="0.011 0.006 0.011" material="servo_mat"/>
+      <geom name="fr_hip_servo" class="visual_geom" type="box" pos="0.036 -0.032 0" size="0.011 0.006 0.011" material="servo_mat"/>
+      <geom name="rl_hip_servo" class="visual_geom" type="box" pos="-0.036 0.032 0" size="0.011 0.006 0.011" material="servo_mat"/>
+      <geom name="rr_hip_servo" class="visual_geom" type="box" pos="-0.036 -0.032 0" size="0.011 0.006 0.011" material="servo_mat"/>
+
+      <!-- Center IMU Site -->
+      <site name="imu_site" pos="0 0 0" size="0.005" rgba="0 1 0 1"/>
+
+      <!-- ============================================================ -->
+      <!-- LEG 1: FRONT LEFT (FL) - Servo L1 (Hip) & Servo L3 (Knee)     -->
+      <!-- ============================================================ -->
+      <body name="fl_femur" pos="0.036 0.039 0.0">
+        <!-- Hip Joint (Servo L1): Sagittal Pitch Axis [0, 1, 0] -->
+        <joint name="fl_hip_joint" type="hinge" pos="0 0 0" axis="0 1 0" range="0.0 2.35619" ref="1.57079"/>
+        
+        <!-- Servo Horn Bracket & Femur Link -->
+        <geom name="fl_femur_col" class="collision_geom" type="capsule" fromto="0 0.005 0 0 0.005 -0.042" size="0.009" mass="0.022" material="femur_mat"/>
+        <geom name="fl_hip_horn_vis" class="visual_geom" type="cylinder" pos="0 0.001 0" euler="1.5708 0 0" size="0.008 0.002" material="servo_horn_mat"/>
+        <geom name="fl_femur_vis" class="visual_geom" type="capsule" fromto="0 0.005 0 0 0.005 -0.042" size="0.0075" material="femur_mat"/>
+        <geom name="fl_knee_servo_vis" class="visual_geom" type="box" pos="0 0.005 -0.035" size="0.011 0.006 0.011" material="servo_mat"/>
+        <geom name="fl_knee_horn_vis" class="visual_geom" type="cylinder" pos="0 0.011 -0.042" euler="1.5708 0 0" size="0.007 0.002" material="servo_horn_mat"/>
+
+        <!-- Knee Assembly (Servo L3): Tibia + Foot -->
+        <body name="fl_tibia" pos="0 0.011 -0.042">
+          <!-- Knee Joint (Servo L3): Sagittal Pitch Axis [0, 1, 0] -->
+          <joint name="fl_knee_joint" type="hinge" pos="0 0 0" axis="0 1 0" range="0.0 3.14159" ref="1.57079"/>
+          
+          <geom name="fl_tibia_col" class="collision_geom" type="capsule" fromto="0 0 0 0 0 -0.046" size="0.007" mass="0.008" material="tibia_mat"/>
+          <geom name="fl_tibia_vis" class="visual_geom" type="capsule" fromto="0 0 0 0 0 -0.046" size="0.006" material="tibia_mat"/>
+          
+          <!-- Foot Contact Tip -->
+          <geom name="fl_foot_geom" class="foot_geom" pos="0 0 -0.046" material="foot_tip_mat"/>
+          <site name="fl_foot" pos="0 0 -0.046" size="0.004" rgba="0 0.95 1 1"/>
+        </body>
+      </body>
+
+      <!-- ============================================================ -->
+      <!-- LEG 2: FRONT RIGHT (FR) - Servo R1 (Hip) & Servo R3 (Knee)    -->
+      <!-- ============================================================ -->
+      <body name="fr_femur" pos="0.036 -0.039 0.0">
+        <!-- Hip Joint (Servo R1): Sagittal Pitch Axis [0, 1, 0] -->
+        <joint name="fr_hip_joint" type="hinge" pos="0 0 0" axis="0 1 0" range="0.785398 3.14159" ref="1.57079"/>
+        
+        <geom name="fr_femur_col" class="collision_geom" type="capsule" fromto="0 -0.005 0 0 -0.005 -0.042" size="0.009" mass="0.022" material="femur_mat"/>
+        <geom name="fr_hip_horn_vis" class="visual_geom" type="cylinder" pos="0 -0.001 0" euler="1.5708 0 0" size="0.008 0.002" material="servo_horn_mat"/>
+        <geom name="fr_femur_vis" class="visual_geom" type="capsule" fromto="0 -0.005 0 0 -0.005 -0.042" size="0.0075" material="femur_mat"/>
+        <geom name="fr_knee_servo_vis" class="visual_geom" type="box" pos="0 -0.005 -0.035" size="0.011 0.006 0.011" material="servo_mat"/>
+        <geom name="fr_knee_horn_vis" class="visual_geom" type="cylinder" pos="0 -0.011 -0.042" euler="1.5708 0 0" size="0.007 0.002" material="servo_horn_mat"/>
+
+        <body name="fr_tibia" pos="0 -0.011 -0.042">
+          <!-- Knee Joint (Servo R3): Sagittal Pitch Axis [0, 1, 0] -->
+          <joint name="fr_knee_joint" type="hinge" pos="0 0 0" axis="0 1 0" range="0.0 3.14159" ref="1.57079"/>
+          
+          <geom name="fr_tibia_col" class="collision_geom" type="capsule" fromto="0 0 0 0 0 -0.046" size="0.007" mass="0.008" material="tibia_mat"/>
+          <geom name="fr_tibia_vis" class="visual_geom" type="capsule" fromto="0 0 0 0 0 -0.046" size="0.006" material="tibia_mat"/>
+          
+          <geom name="fr_foot_geom" class="foot_geom" pos="0 0 -0.046" material="foot_tip_mat"/>
+          <site name="fr_foot" pos="0 0 -0.046" size="0.004" rgba="0 0.95 1 1"/>
+        </body>
+      </body>
+
+      <!-- ============================================================ -->
+      <!-- LEG 3: REAR LEFT (RL) - Servo L2 (Hip) & Servo L4 (Knee)      -->
+      <!-- ============================================================ -->
+      <body name="rl_femur" pos="-0.036 0.039 0.0">
+        <!-- Hip Joint (Servo L2): Sagittal Pitch Axis [0, 1, 0] -->
+        <joint name="rl_hip_joint" type="hinge" pos="0 0 0" axis="0 1 0" range="0.785398 3.14159" ref="1.57079"/>
+        
+        <geom name="rl_femur_col" class="collision_geom" type="capsule" fromto="0 0.005 0 0 0.005 -0.042" size="0.009" mass="0.022" material="femur_mat"/>
+        <geom name="rl_hip_horn_vis" class="visual_geom" type="cylinder" pos="0 0.001 0" euler="1.5708 0 0" size="0.008 0.002" material="servo_horn_mat"/>
+        <geom name="rl_femur_vis" class="visual_geom" type="capsule" fromto="0 0.005 0 0 0.005 -0.042" size="0.0075" material="femur_mat"/>
+        <geom name="rl_knee_servo_vis" class="visual_geom" type="box" pos="0 0.005 -0.035" size="0.011 0.006 0.011" material="servo_mat"/>
+        <geom name="rl_knee_horn_vis" class="visual_geom" type="cylinder" pos="0 0.011 -0.042" euler="1.5708 0 0" size="0.007 0.002" material="servo_horn_mat"/>
+
+        <body name="rl_tibia" pos="0 0.011 -0.042">
+          <!-- Knee Joint (Servo L4): Sagittal Pitch Axis [0, 1, 0] -->
+          <joint name="rl_knee_joint" type="hinge" pos="0 0 0" axis="0 1 0" range="0.0 3.14159" ref="1.57079"/>
+          
+          <geom name="rl_tibia_col" class="collision_geom" type="capsule" fromto="0 0 0 0 0 -0.046" size="0.007" mass="0.008" material="tibia_mat"/>
+          <geom name="rl_tibia_vis" class="visual_geom" type="capsule" fromto="0 0 0 0 0 -0.046" size="0.006" material="tibia_mat"/>
+          
+          <geom name="rl_foot_geom" class="foot_geom" pos="0 0 -0.046" material="foot_tip_mat"/>
+          <site name="rl_foot" pos="0 0 -0.046" size="0.004" rgba="0 0.95 1 1"/>
+        </body>
+      </body>
+
+      <!-- ============================================================ -->
+      <!-- LEG 4: REAR RIGHT (RR) - Servo R2 (Hip) & Servo R4 (Knee)     -->
+      <!-- ============================================================ -->
+      <body name="rr_femur" pos="-0.036 -0.039 0.0">
+        <!-- Hip Joint (Servo R2): Sagittal Pitch Axis [0, 1, 0] -->
+        <joint name="rr_hip_joint" type="hinge" pos="0 0 0" axis="0 1 0" range="0.0 2.35619" ref="1.57079"/>
+        
+        <geom name="rr_femur_col" class="collision_geom" type="capsule" fromto="0 -0.005 0 0 -0.005 -0.042" size="0.009" mass="0.022" material="femur_mat"/>
+        <geom name="rr_hip_horn_vis" class="visual_geom" type="cylinder" pos="0 -0.001 0" euler="1.5708 0 0" size="0.008 0.002" material="servo_horn_mat"/>
+        <geom name="rr_femur_vis" class="visual_geom" type="capsule" fromto="0 -0.005 0 0 -0.005 -0.042" size="0.0075" material="femur_mat"/>
+        <geom name="rr_knee_servo_vis" class="visual_geom" type="box" pos="0 -0.005 -0.035" size="0.011 0.006 0.011" material="servo_mat"/>
+        <geom name="rr_knee_horn_vis" class="visual_geom" type="cylinder" pos="0 -0.011 -0.042" euler="1.5708 0 0" size="0.007 0.002" material="servo_horn_mat"/>
+
+        <body name="rr_tibia" pos="0 -0.011 -0.042">
+          <!-- Knee Joint (Servo R4): Sagittal Pitch Axis [0, 1, 0] -->
+          <joint name="rr_knee_joint" type="hinge" pos="0 0 0" axis="0 1 0" range="0.0 3.14159" ref="1.57079"/>
+          
+          <geom name="rr_tibia_col" class="collision_geom" type="capsule" fromto="0 0 0 0 0 -0.046" size="0.007" mass="0.008" material="tibia_mat"/>
+          <geom name="rr_tibia_vis" class="visual_geom" type="capsule" fromto="0 0 0 0 0 -0.046" size="0.006" material="tibia_mat"/>
+          
+          <geom name="rr_foot_geom" class="foot_geom" pos="0 0 -0.046" material="foot_tip_mat"/>
+          <site name="rr_foot" pos="0 0 -0.046" size="0.004" rgba="0 0.95 1 1"/>
+        </body>
+      </body>
+
+    </body>
+  </worldbody>
+
+  <!-- ============================================================ -->
+  <!-- ACTUATOR DEFINITIONS (8 Position-Controlled MG90S Servos)    -->
+  <!-- ============================================================ -->
+  <actuator>
+    <position name="fl_hip_actuator" joint="fl_hip_joint" ctrlrange="0.0 2.35619" kp="50.0" kv="2.0" forcerange="-5.0 5.0"/>
+    <position name="fl_knee_actuator" joint="fl_knee_joint" ctrlrange="0.0 3.14159" kp="50.0" kv="2.0" forcerange="-5.0 5.0"/>
+    <position name="fr_hip_actuator" joint="fr_hip_joint" ctrlrange="0.785398 3.14159" kp="50.0" kv="2.0" forcerange="-5.0 5.0"/>
+    <position name="fr_knee_actuator" joint="fr_knee_joint" ctrlrange="0.0 3.14159" kp="50.0" kv="2.0" forcerange="-5.0 5.0"/>
+    <position name="rl_hip_actuator" joint="rl_hip_joint" ctrlrange="0.785398 3.14159" kp="50.0" kv="2.0" forcerange="-5.0 5.0"/>
+    <position name="rl_knee_actuator" joint="rl_knee_joint" ctrlrange="0.0 3.14159" kp="50.0" kv="2.0" forcerange="-5.0 5.0"/>
+    <position name="rr_hip_actuator" joint="rr_hip_joint" ctrlrange="0.0 2.35619" kp="50.0" kv="2.0" forcerange="-5.0 5.0"/>
+    <position name="rr_knee_actuator" joint="rr_knee_joint" ctrlrange="0.0 3.14159" kp="50.0" kv="2.0" forcerange="-5.0 5.0"/>
+  </actuator>
+
+  <!-- ============================================================ -->
+  <!-- SENSOR DEFINITIONS                                           -->
+  <!-- ============================================================ -->
+  <sensor>
+    <touch name="fl_touch" site="fl_foot"/>
+    <touch name="fr_touch" site="fr_foot"/>
+    <touch name="rl_touch" site="rl_foot"/>
+    <touch name="rr_touch" site="rr_foot"/>
+    <accelerometer name="body_accel" site="imu_site"/>
+    <gyro name="body_gyro" site="imu_site"/>
+    <jointpos name="fl_hip_pos" joint="fl_hip_joint"/>
+    <jointpos name="fl_knee_pos" joint="fl_knee_joint"/>
+    <jointpos name="fr_hip_pos" joint="fr_hip_joint"/>
+    <jointpos name="fr_knee_pos" joint="fr_knee_joint"/>
+    <jointpos name="rl_hip_pos" joint="rl_hip_joint"/>
+    <jointpos name="rl_knee_pos" joint="rl_knee_joint"/>
+    <jointpos name="rr_hip_pos" joint="rr_hip_joint"/>
+    <jointpos name="rr_knee_pos" joint="rr_knee_joint"/>
+    <jointvel name="fl_hip_vel" joint="fl_hip_joint"/>
+    <jointvel name="fl_knee_vel" joint="fl_knee_joint"/>
+    <jointvel name="fr_hip_vel" joint="fr_hip_joint"/>
+    <jointvel name="fr_knee_vel" joint="fr_knee_joint"/>
+    <jointvel name="rl_hip_vel" joint="rl_hip_joint"/>
+    <jointvel name="rl_knee_vel" joint="rl_knee_joint"/>
+    <jointvel name="rr_hip_vel" joint="rr_hip_joint"/>
+    <jointvel name="rr_knee_vel" joint="rr_knee_joint"/>
+  </sensor>
+</mujoco>
