@@ -1,0 +1,347 @@
+/* =============================================================================
+   Sesame AI Digital Twin — Authentic Finnova Design System Theme
+   Exact Color Palette & Glassmorphism matching reference
+   ============================================================================= */
+
+QMainWindow, QDialog {
+    background-color: #f0f2f7;
+    color: #0f172a;
+    font-family: "Segoe UI", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 12px;
+}
+
+QWidget {
+    font-family: "Segoe UI", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ================= Top Pill Header (Floating Dark Capsule) ================= */
+QFrame#ControlBarFrame {
+    background-color: #111420;
+    border: 1px solid #1e2436;
+    border-radius: 22px;
+    padding: 6px 14px;
+}
+
+QFrame#ControlBarFrame QLabel {
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+QMenuBar {
+    background-color: #f0f2f7;
+    color: #475569;
+    border: none;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+QMenuBar::item:selected {
+    background-color: #e2e8f0;
+    color: #4f46e5;
+    border-radius: 6px;
+}
+
+QMenu {
+    background-color: #ffffff;
+    color: #0f172a;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 6px;
+}
+
+QMenu::item:selected {
+    background-color: #eef2ff;
+    color: #4f46e5;
+    border-radius: 6px;
+}
+
+QStatusBar {
+    background-color: #ffffff;
+    color: #64748b;
+    border-top: 1px solid #e2e8f0;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px;
+}
+
+/* ================= Top KPI Cards (Pristine White Cards with Soft Shadow) ================= */
+QFrame#KpiCard {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 14px;
+}
+
+QFrame#KpiCard:hover {
+    border: 1px solid #c7d2fe;
+    background-color: #ffffff;
+}
+
+QFrame#KpiCard QLabel#kpi_title {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+QFrame#KpiCard QLabel#kpi_value {
+    color: #0f172a;
+    font-size: 22px;
+    font-weight: 800;
+    font-family: "Segoe UI", -apple-system, sans-serif;
+}
+
+QFrame#KpiCard QLabel#kpi_sub {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* ================= Buttons & Pills ================= */
+QPushButton {
+    background-color: #1e2438;
+    color: #ffffff;
+    border: 1px solid #2d374e;
+    border-radius: 14px;
+    padding: 5px 12px;
+    min-width: 55px;
+    font-weight: 700;
+    font-size: 11px;
+}
+
+QPushButton:hover {
+    background-color: #2c3550;
+    border-color: #6366f1;
+}
+
+QPushButton#btn_start {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #10b981, stop:1 #059669);
+    color: #ffffff;
+    border: none;
+    border-radius: 14px;
+}
+QPushButton#btn_start:hover {
+    background: #059669;
+}
+
+QPushButton#btn_pause {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #f59e0b, stop:1 #d97706);
+    color: #ffffff;
+    border: none;
+    border-radius: 14px;
+}
+
+QPushButton#btn_reset {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #4f46e5, stop:1 #4338ca);
+    color: #ffffff;
+    border: none;
+    border-radius: 14px;
+}
+
+QPushButton#btn_estop {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ef4444, stop:1 #dc2626);
+    color: #ffffff;
+    border: none;
+    border-radius: 14px;
+    font-weight: 800;
+}
+
+/* Primary Action Pill (Finnova Create Invoice Style) */
+QPushButton.primary_pill {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #4f46e5, stop:1 #4338ca);
+    color: #ffffff;
+    border: none;
+    border-radius: 16px;
+    padding: 6px 16px;
+    font-weight: 700;
+    font-size: 12px;
+}
+QPushButton.primary_pill:hover {
+    background: #4338ca;
+}
+
+/* White Pill Button (Finnova Payout Style) */
+QPushButton.white_pill {
+    background-color: #ffffff;
+    color: #0f172a;
+    border: none;
+    border-radius: 16px;
+    padding: 6px 16px;
+    font-weight: 800;
+    font-size: 11px;
+}
+QPushButton.white_pill:hover {
+    background-color: #f1f5f9;
+}
+
+/* ================= 3D Viewport Hero Card Frame ================= */
+QFrame#ViewportHeroCard {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 4px;
+}
+
+/* ================= Bottom Velvet / Royal Navy Container ================= */
+QFrame#BottomDeckContainer {
+    background-color: #121522;
+    border: 1px solid #1e2438;
+    border-radius: 22px;
+    padding: 12px;
+}
+
+QTabWidget#BottomDeckTabs::pane {
+    border: 1px solid #1e2538;
+    background-color: #121522;
+    border-radius: 16px;
+    padding: 4px;
+}
+
+QTabBar::tab {
+    background-color: #e2e8f0;
+    color: #475569;
+    padding: 7px 16px;
+    margin-right: 4px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 11px;
+}
+
+QTabBar::tab:selected {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #4f46e5, stop:1 #4338ca);
+    color: #ffffff;
+}
+
+QTabBar::tab:hover:!selected {
+    background-color: #cbd5e1;
+    color: #0f172a;
+}
+
+/* Inside Bottom Tab Panels */
+QTabWidget#BottomDeckTabs QWidget {
+    background-color: #121522;
+    color: #f8fafc;
+}
+
+QTabWidget#BottomDeckTabs QLabel {
+    color: #f8fafc;
+}
+
+/* Royal Indigo Detail Card (Matching Finnova Details Card) */
+QFrame.RoyalIndigoCard {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #3730a3, stop:1 #4f46e5);
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 14px;
+}
+
+QFrame.RoyalIndigoSubCard {
+    background-color: rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    padding: 10px;
+}
+
+/* ================= Right Telemetry Side Panel (Pristine White Card) ================= */
+QFrame#TelemetryPanelFrame {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 12px;
+}
+
+QFrame#TelemetryPanelFrame QLabel {
+    color: #0f172a;
+}
+
+/* ================= Form Controls ================= */
+QComboBox {
+    background-color: #1e2438;
+    color: #f8fafc;
+    border: 1px solid #2d374e;
+    border-radius: 12px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+QComboBox:hover {
+    border-color: #6366f1;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #121522;
+    color: #f8fafc;
+    border: 1px solid #2d374e;
+    selection-background-color: #4f46e5;
+    selection-color: #ffffff;
+    border-radius: 8px;
+    padding: 4px;
+}
+
+QSlider::groove:horizontal {
+    height: 4px;
+    background: #2d374e;
+    border-radius: 2px;
+}
+
+QSlider::sub-page:horizontal {
+    background: #4f46e5;
+    border-radius: 2px;
+}
+
+QSlider::handle:horizontal {
+    background: #ffffff;
+    border: 2px solid #4f46e5;
+    width: 12px;
+    margin-top: -4px;
+    margin-bottom: -4px;
+    border-radius: 6px;
+}
+
+/* ================= Tables ================= */
+QTableWidget, QTableView {
+    background-color: #0c0f18;
+    color: #f8fafc;
+    border: 1px solid #1a2234;
+    gridline-color: #161d2e;
+    border-radius: 10px;
+}
+
+QHeaderView::section {
+    background-color: #141826;
+    color: #a5b4fc;
+    font-weight: 700;
+    font-size: 11px;
+    padding: 6px;
+    border: none;
+    border-bottom: 1px solid #1a2234;
+}
+
+QTableWidget::item:selected {
+    background-color: rgba(79, 70, 229, 0.35);
+    color: #ffffff;
+}
+
+/* ================= Scrollbars ================= */
+QScrollBar:vertical {
+    background: #f0f2f7;
+    width: 6px;
+    border-radius: 3px;
+}
+
+QScrollBar::handle:vertical {
+    background: #cbd5e1;
+    border-radius: 3px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #4f46e5;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
