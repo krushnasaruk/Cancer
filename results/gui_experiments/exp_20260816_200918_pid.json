@@ -1,0 +1,103 @@
+{
+  "timestamp": "2026-08-16 20:09:18",
+  "configuration": {
+    "controller": "PID",
+    "environment": "testing_arena",
+    "domain_randomization": false,
+    "use_actuator_model": true,
+    "num_episodes": 10
+  },
+  "metrics": {
+    "success_rate_percent": 0.0,
+    "mean_final_error_mm": 87.38334099294079,
+    "median_final_error_mm": 85.33653683624246,
+    "rmse_error_mm": 90.35231572495228,
+    "max_error_mm": 126.78675326772337,
+    "mean_episode_return": 533.4402546775698,
+    "mean_episode_length": 126.4,
+    "throughput_fps": 325.99161040192104,
+    "total_time_s": 3.8774003982543945
+  },
+  "episodes": [
+    {
+      "episode": 1,
+      "return": 869.6600938283558,
+      "final_dist_m": 0.07441093738329803,
+      "final_dist_mm": 74.41093738329803,
+      "steps": 200,
+      "success": false
+    },
+    {
+      "episode": 2,
+      "return": 972.8857427133747,
+      "final_dist_m": 0.057759693583339954,
+      "final_dist_mm": 57.75969358333995,
+      "steps": 200,
+      "success": false
+    },
+    {
+      "episode": 3,
+      "return": 19.401378545964484,
+      "final_dist_m": 0.10284463412191805,
+      "final_dist_mm": 102.84463412191805,
+      "steps": 15,
+      "success": false
+    },
+    {
+      "episode": 4,
+      "return": 957.5743140382297,
+      "final_dist_m": 0.059597218590933275,
+      "final_dist_mm": 59.597218590933274,
+      "steps": 200,
+      "success": false
+    },
+    {
+      "episode": 5,
+      "return": 698.3496922216342,
+      "final_dist_m": 0.10055951418881864,
+      "final_dist_mm": 100.55951418881864,
+      "steps": 200,
+      "success": false
+    },
+    {
+      "episode": 6,
+      "return": 951.3421740085663,
+      "final_dist_m": 0.06366102927304311,
+      "final_dist_mm": 63.66102927304311,
+      "steps": 200,
+      "success": false
+    },
+    {
+      "episode": 7,
+      "return": 10.189783945618636,
+      "final_dist_m": 0.12678675326772337,
+      "final_dist_mm": 126.78675326772337,
+      "steps": 16,
+      "success": false
+    },
+    {
+      "episode": 8,
+      "return": 30.23213360938635,
+      "final_dist_m": 0.08789953102981114,
+      "final_dist_mm": 87.89953102981114,
+      "steps": 18,
+      "success": false
+    },
+    {
+      "episode": 9,
+      "return": 810.0383804868333,
+      "final_dist_m": 0.0827735426426738,
+      "final_dist_mm": 82.77354264267379,
+      "steps": 200,
+      "success": false
+    },
+    {
+      "episode": 10,
+      "return": 14.728853377734975,
+      "final_dist_m": 0.1175405558478485,
+      "final_dist_mm": 117.54055584784851,
+      "steps": 15,
+      "success": false
+    }
+  ]
+}

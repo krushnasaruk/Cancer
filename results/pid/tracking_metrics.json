@@ -1,0 +1,34 @@
+{
+  "trajectory_type": "sinusoidal",
+  "duration_seconds": 5.0,
+  "overall_joint_rmse_rad": 1.644810066997115,
+  "overall_joint_rmse_deg": 94.24067493956487,
+  "overall_end_effector_rmse_m": 0.07764282316549626,
+  "overall_end_effector_rmse_mm": 77.64282316549625,
+  "joint_rmse_rad": {
+    "fr_hip_joint": 1.743710614404131,
+    "rr_hip_joint": 0.8010805280607248,
+    "fl_hip_joint": 0.5276588892842397,
+    "rl_hip_joint": 0.6815990022666912,
+    "rr_knee_joint": 2.117286186268887,
+    "fr_knee_joint": 0.12689280645687495,
+    "fl_knee_joint": 1.9076977315952546,
+    "rl_knee_joint": 3.013242475370329
+  },
+  "joint_max_error_rad": {
+    "fr_hip_joint": 2.2471450271230986,
+    "rr_hip_joint": 1.034889565838164,
+    "fl_hip_joint": 0.7009781893323777,
+    "rl_hip_joint": 0.819968334862168,
+    "rr_knee_joint": 2.4761966343970157,
+    "fr_knee_joint": 0.3200290794612042,
+    "fl_knee_joint": 2.006004562300535,
+    "rl_knee_joint": 3.1429680544931218
+  },
+  "leg_ee_rmse_mm": {
+    "FL": 104.60441125387148,
+    "FR": 92.74149280593686,
+    "RL": 56.57012216077397,
+    "RR": 37.018723553176656
+  }
+}

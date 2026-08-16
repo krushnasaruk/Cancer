@@ -1,0 +1,8 @@
+{
+  "num_episodes": 10,
+  "success_rate_percent": 0.0,
+  "mean_final_distance_m": 0.1537232947007615,
+  "mean_final_distance_mm": 153.7232947007615,
+  "mean_episode_return": 9074.253591800165,
+  "std_episode_return": 3446.049446338074
+}

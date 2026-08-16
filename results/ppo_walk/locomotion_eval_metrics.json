@@ -1,0 +1,7 @@
+{
+  "num_episodes": 5,
+  "mean_x_displacement_cm": 0.7784330964441563,
+  "mean_forward_velocity_cm_s": 0.12211821215256057,
+  "mean_episode_return": 3125.2746993294336,
+  "mean_upright_stability": 0.999980122470743
+}

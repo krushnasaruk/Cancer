@@ -1,0 +1,39 @@
+{
+  "timestamp": "2026-08-16 20:23:30",
+  "configuration": {
+    "controller": "PID",
+    "environment": "testing_arena",
+    "domain_randomization": false,
+    "use_actuator_model": true,
+    "num_episodes": 2
+  },
+  "metrics": {
+    "success_rate_percent": 0.0,
+    "mean_final_error_mm": 73.19181585655102,
+    "median_final_error_mm": 73.19181585655102,
+    "rmse_error_mm": 73.8160886634449,
+    "max_error_mm": 82.77164034295393,
+    "mean_episode_return": 34.90369191301289,
+    "mean_episode_length": 13.0,
+    "throughput_fps": 332.3638535856877,
+    "total_time_s": 0.07822751998901367
+  },
+  "episodes": [
+    {
+      "episode": 1,
+      "return": 27.07778003104158,
+      "final_dist_m": 0.08277164034295394,
+      "final_dist_mm": 82.77164034295393,
+      "steps": 13,
+      "success": false
+    },
+    {
+      "episode": 2,
+      "return": 42.7296037949842,
+      "final_dist_m": 0.06361199137014811,
+      "final_dist_mm": 63.61199137014811,
+      "steps": 13,
+      "success": false
+    }
+  ]
+}

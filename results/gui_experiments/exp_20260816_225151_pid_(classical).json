@@ -1,0 +1,43 @@
+{
+  "timestamp": "2026-08-16 22:51:51",
+  "configuration": {
+    "controller": "PID (Classical)",
+    "environment": "testing_arena",
+    "domain_randomization": false,
+    "use_actuator_model": true,
+    "num_episodes": 2
+  },
+  "metrics": {
+    "success_rate_pct": 0.0,
+    "mean_final_dist_mm": 73.38024040009122,
+    "mean_final_error_mm": 73.38024040009122,
+    "median_final_dist_mm": 73.38024040009122,
+    "rmse_final_dist_mm": 73.88796078316341,
+    "rmse_error_mm": 73.88796078316341,
+    "max_final_dist_mm": 82.0272669132409,
+    "mean_episode_return": 347.6684676606171,
+    "std_episode_return": 30.554741326031404,
+    "mean_episode_length": 13.0,
+    "total_sim_steps": 26,
+    "elapsed_time_s": 0.10027170181274414,
+    "sim_throughput_steps_per_s": 259.29548945478757
+  },
+  "episodes": [
+    {
+      "episode": 1,
+      "return": 317.11372633458575,
+      "final_dist_m": 0.08202726691324089,
+      "final_dist_mm": 82.0272669132409,
+      "steps": 13,
+      "success": false
+    },
+    {
+      "episode": 2,
+      "return": 378.22320898664856,
+      "final_dist_m": 0.06473321388694156,
+      "final_dist_mm": 64.73321388694156,
+      "steps": 13,
+      "success": false
+    }
+  ]
+}
