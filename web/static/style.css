@@ -1,0 +1,699 @@
+/* =============================================================================
+   Sesame AI Digital Twin — Executive 100vh SPA Dashboard Design System (CSS)
+   ============================================================================= */
+
+:root {
+  --bg-canvas: #090c15;
+  --card-bg: #111625;
+  --card-border: #1e293b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --primary-purple: #6366f1;
+  --primary-purple-hover: #4f46e5;
+  --velvet-navy: #0d111c;
+  --velvet-border: #1a2236;
+  --velvet-card: #131a2b;
+  --accent-cyan: #06b6d4;
+  --accent-green: #10b981;
+  --accent-orange: #f59e0b;
+  --accent-red: #ef4444;
+  --radius-lg: 16px;
+  --radius-md: 10px;
+  --radius-pill: 9999px;
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="light"] {
+  --bg-canvas: #f1f5f9;
+  --card-bg: #ffffff;
+  --card-border: #e2e8f0;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --velvet-navy: #181e2e;
+  --velvet-border: #2d3748;
+  --velvet-card: #1e2438;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* Strict Zero-Scroll 100vh constraint */
+  background-color: var(--bg-canvas);
+  color: var(--text-main);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* App Viewport Root */
+.app-viewport {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 14px;
+  gap: 10px;
+}
+
+/* ================= 1. Top Executive Navigation Bar ================= */
+.top-nav-capsule {
+  height: 56px;
+  background-color: #0f1422;
+  border: 1px solid #1e273e;
+  border-radius: var(--radius-pill);
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+.brand-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #6366f1, #06b6d4);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #ffffff;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-title {
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  line-height: 1.1;
+}
+
+.brand-sub {
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* Main Page Tabs Navigation */
+.main-nav-tabs {
+  display: flex;
+  background-color: #090c15;
+  border: 1px solid #1a2236;
+  border-radius: var(--radius-pill);
+  padding: 3px;
+  gap: 4px;
+}
+
+.nav-tab-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-tab-btn:hover {
+  color: #ffffff;
+}
+
+.nav-tab-btn.active {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.35);
+}
+
+/* Transport Pill Deck */
+.pill-deck {
+  display: flex;
+  background-color: #070911;
+  border: 1px solid #1a2236;
+  border-radius: var(--radius-pill);
+  padding: 3px;
+  gap: 4px;
+}
+
+.pill-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pill-btn.btn-run:hover, .pill-btn.btn-run.active {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.pill-btn.btn-pause:hover, .pill-btn.btn-pause.active {
+  background: #f59e0b;
+  color: #ffffff;
+}
+
+.pill-btn.btn-reset:hover, .pill-btn.btn-reset.active {
+  background: #6366f1;
+  color: #ffffff;
+}
+
+.pill-btn.btn-estop {
+  color: #ef4444;
+}
+
+.pill-btn.btn-estop:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+/* Theme Toggle Button */
+.theme-toggle-btn {
+  background: #1a2236;
+  border: 1px solid #2d3748;
+  color: #f8fafc;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.theme-toggle-btn:hover {
+  background: #252f48;
+}
+
+/* ================= 2. Page Container (Flexible SPA Pages) ================= */
+.page-container {
+  flex: 1;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.app-page {
+  display: none;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.app-page.active {
+  display: flex;
+}
+
+/* ================= PAGE 1: LIVE 3D DIGITAL TWIN (Split Layout) ================= */
+.twin-split-layout {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 310px 1fr;
+  gap: 10px;
+}
+
+/* Left Sidebar */
+.twin-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.sidebar-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-row label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.form-row select, .form-row input[type="text"] {
+  background-color: #090c15;
+  border: 1px solid var(--card-border);
+  color: var(--text-main);
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 600;
+  outline: none;
+}
+
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.badge-val {
+  background-color: #1e293b;
+  color: var(--accent-cyan);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* KPI Mini Grid */
+.kpi-mini-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.kpi-mini-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kpi-mini-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.kpi-mini-val {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-main);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.kpi-mini-sub {
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+.text-cyan { color: var(--accent-cyan); }
+.text-purple { color: var(--primary-purple); }
+.text-green { color: var(--accent-green); }
+.text-orange { color: var(--accent-orange); }
+
+/* Target Nudger Grid */
+.nudge-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.nudge-btn {
+  background: #1a2236;
+  border: 1px solid #2d3748;
+  color: #06b6d4;
+  padding: 6px 0;
+  border-radius: var(--radius-md);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nudge-btn:hover {
+  background: var(--primary-purple);
+  color: #ffffff;
+}
+
+/* Right Stage Hero Viewport */
+.twin-stage-hero {
+  background-color: #080b13;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+#three-canvas-container {
+  width: 100%;
+  flex: 1;
+}
+
+/* Floating Overlay Components */
+.floating-cam-bar {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 4px;
+  background: rgba(13, 17, 28, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-pill);
+  padding: 4px;
+}
+
+.cam-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.cam-btn.active {
+  background: var(--primary-purple);
+  color: #ffffff;
+}
+
+.floating-contact-bar {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(13, 17, 28, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-pill);
+  padding: 4px 12px;
+}
+
+.contact-tag {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.contact-led {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #1e293b;
+  color: #64748b;
+}
+
+.contact-led.active {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--accent-green);
+  border: 1px solid var(--accent-green);
+}
+
+/* Stage Bottom Drawer Overlay */
+.stage-bottom-drawer {
+  height: 140px;
+  background-color: var(--velvet-navy);
+  border-top: 1px solid var(--velvet-border);
+  padding: 8px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drawer-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.drawer-status {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-green);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.drawer-charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  flex: 1;
+}
+
+.drawer-chart-card {
+  background-color: var(--velvet-card);
+  border: 1px solid var(--velvet-border);
+  border-radius: var(--radius-md);
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-tag {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.chart-wrapper-sm {
+  flex: 1;
+  position: relative;
+}
+
+/* ================= PAGES 2, 3, 4: FULL SCREEN DEDICATED PAGES ================= */
+.page-content-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+}
+
+.page-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.page-heading {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.page-subheading {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.primary-gradient-btn {
+  background: linear-gradient(135deg, var(--primary-purple), var(--accent-cyan));
+  border: none;
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.primary-gradient-btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Servos Grid Full */
+.servos-grid-full {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.servo-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.servo-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.servo-val {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--accent-cyan);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.servo-bar {
+  height: 4px;
+  background-color: #1e293b;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.servo-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #06b6d4);
+  width: 50%;
+}
+
+/* Finnova Table */
+.table-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.finnova-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.finnova-table th {
+  text-align: left;
+  padding: 8px 12px;
+  color: var(--text-muted);
+  font-weight: 700;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.finnova-table td {
+  padding: 8px 12px;
+  color: var(--text-main);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* Analytics Row */
+.analytics-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.bench-stat-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bench-stat-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.bench-stat-num {
+  font-size: 24px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.bench-stat-sub {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.full-charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  flex: 1;
+}
+
+.full-chart-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chart-wrapper-lg {
+  flex: 1;
+  position: relative;
+  min-height: 250px;
+}
+
+/* Settings Grid */
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.settings-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

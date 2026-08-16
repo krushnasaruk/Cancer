@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sesame AI Digital Twin — Executive Sim-to-Real Dashboard</title>
+  
+  <!-- Modern Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- Three.js for 3D WebGL Robot Twin -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- Chart.js for Live Telemetry Graphs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body data-theme="dark">
+  <div class="app-viewport">
+    
+    <!-- 1. Top Executive Navigation Bar -->
+    <header class="top-nav-capsule">
+      <div class="brand-section">
+        <div class="logo-icon">⚡</div>
+        <div class="brand-text">
+          <span class="brand-title">SESAME AI</span>
+          <span class="brand-sub">Digital Twin 2.0</span>
+        </div>
+      </div>
+
+      <!-- Main Page Navigation Tabs -->
+      <nav class="main-nav-tabs">
+        <button class="nav-tab-btn active" onclick="switchPage('page-twin')">🖥️ Live 3D Twin</button>
+        <button class="nav-tab-btn" onclick="switchPage('page-servos')">🦾 Joint Telemetry</button>
+        <button class="nav-tab-btn" onclick="switchPage('page-analytics')">📈 AI Policy & Analytics</button>
+        <button class="nav-tab-btn" onclick="switchPage('page-settings')">⚙️ Hardware & Sim Config</button>
+      </nav>
+
+      <!-- Segmented Transport Controls -->
+      <div class="pill-deck">
+        <button id="btn-run" class="pill-btn btn-run active" onclick="sendCommand('START')">▶ Run</button>
+        <button id="btn-pause" class="pill-btn btn-pause" onclick="sendCommand('PAUSE')">⏸ Pause</button>
+        <button id="btn-reset" class="pill-btn btn-reset" onclick="sendCommand('RESET')">↺ Reset</button>
+        <button id="btn-estop" class="pill-btn btn-estop" onclick="sendCommand('ESTOP')">⛔ E-STOP</button>
+      </div>
+
+      <!-- Quick Actions & Theme -->
+      <div class="nav-controls">
+        <button class="theme-toggle-btn" onclick="toggleTheme()" id="theme-btn">☀️ Light</button>
+      </div>
+    </header>
+
+    <!-- 2. Main Viewport Container (Fits in 100vh) -->
+    <main class="page-container">
+      
+      <!-- =================================================================== -->
+      <!-- PAGE 1: LIVE 3D DIGITAL TWIN (Zero-Scroll Split Layout)             -->
+      <!-- =================================================================== -->
+      <div id="page-twin" class="app-page active">
+        <div class="twin-split-layout">
+          
+          <!-- Left Control & Telemetry Sidebar -->
+          <aside class="twin-sidebar">
+            
+            <!-- Controller & Mode Selector Card -->
+            <div class="sidebar-card">
+              <h3 class="card-section-title">🎮 Controller Mode</h3>
+              <div class="form-row">
+                <label>Policy Algorithm</label>
+                <select id="select-controller" onchange="onControllerChange(this.value)">
+                  <option value="PID (Classical)">PID (Classical)</option>
+                  <option value="PPO (AI Reach)" selected>PPO (AI Reach)</option>
+                  <option value="PPO (AI Walk)">PPO (AI Walk)</option>
+                  <option value="SAC (AI)">SAC (AI)</option>
+                  <option value="PPO + Domain Rand">PPO + Domain Rand</option>
+                </select>
+              </div>
+
+              <div class="form-row" id="gait-group" style="display: none;">
+                <label>Motion Preset</label>
+                <select id="select-gait" onchange="onGaitChange(this.value)">
+                  <option value="STAND">🧍 STAND</option>
+                  <option value="WALK">🐾 TROT WALK</option>
+                  <option value="WAVE">👋 WAVE HAND</option>
+                  <option value="PUSHUP">🧘 PUSHUPS</option>
+                  <option value="SINE">〰️ SINE WAVE</option>
+                </select>
+              </div>
+
+              <div class="form-row">
+                <div class="slider-header">
+                  <label>Sim Speed</label>
+                  <span id="speed-val" class="badge-val">1.0x</span>
+                </div>
+                <input type="range" min="0.2" max="2.5" step="0.1" value="1.0" oninput="onSpeedChange(this.value)">
+              </div>
+            </div>
+
+            <!-- KPI Summary Cards -->
+            <div class="kpi-mini-grid">
+              <div class="kpi-mini-card">
+                <span class="kpi-mini-label">Base Z Height</span>
+                <span class="kpi-mini-val" id="kpi-base-z">96.8 mm</span>
+                <span class="kpi-mini-sub" id="kpi-euler">Roll: 0° | Pitch: 0°</span>
+              </div>
+
+              <div class="kpi-mini-card">
+                <span class="kpi-mini-label">FL Reaching Target</span>
+                <span class="kpi-mini-val text-cyan" id="kpi-target-dist">76.7 mm</span>
+                <span class="kpi-mini-sub" id="kpi-reach-status">In Transit</span>
+              </div>
+
+              <div class="kpi-mini-card">
+                <span class="kpi-mini-label">Actuator Load</span>
+                <span class="kpi-mini-val text-purple" id="kpi-actuator-torque">0.042 N·m</span>
+                <span class="kpi-mini-sub">20ms lag | ±0.86° play</span>
+              </div>
+
+              <div class="kpi-mini-card">
+                <span class="kpi-mini-label">AI Episode Return</span>
+                <span class="kpi-mini-val text-green" id="kpi-return">+2,240.9</span>
+                <span class="kpi-mini-sub" id="kpi-step-counter">Step: 0 | 60 FPS</span>
+              </div>
+            </div>
+
+            <!-- Target Nudger Widget -->
+            <div class="sidebar-card">
+              <h3 class="card-section-title">🎯 Reaching Target Position</h3>
+              <div class="nudge-grid">
+                <button class="nudge-btn" onclick="nudgeTarget(0.015, 0, 0)">+X</button>
+                <button class="nudge-btn" onclick="nudgeTarget(-0.015, 0, 0)">-X</button>
+                <button class="nudge-btn" onclick="nudgeTarget(0, 0.015, 0)">+Y</button>
+                <button class="nudge-btn" onclick="nudgeTarget(0, -0.015, 0)">-Y</button>
+                <button class="nudge-btn" onclick="nudgeTarget(0, 0, 0.010)">+Z</button>
+                <button class="nudge-btn" onclick="nudgeTarget(0, 0, -0.010)">-Z</button>
+              </div>
+            </div>
+
+          </aside>
+
+          <!-- Right Center Stage: 3D WebGL Canvas Hero -->
+          <div class="twin-stage-hero">
+            <div id="three-canvas-container"></div>
+
+            <!-- Floating Camera Toolbar (Top Right) -->
+            <div class="floating-cam-bar">
+              <button class="cam-btn active" onclick="setCameraView('iso')">🌐 Isometric</button>
+              <button class="cam-btn" onclick="setCameraView('front')">👁️ Front</button>
+              <button class="cam-btn" onclick="setCameraView('side')">📐 Side</button>
+              <button class="cam-btn" onclick="setCameraView('top')">🔝 Top</button>
+              <button class="cam-btn" id="btn-follow" onclick="toggleFollowCamera()">🎯 Follow</button>
+            </div>
+
+            <!-- Floating Ground Contact Indicators (Bottom Right) -->
+            <div class="floating-contact-bar">
+              <span class="contact-tag">FEET CONTACT:</span>
+              <span id="led-fl" class="contact-led active">FL</span>
+              <span id="led-fr" class="contact-led active">FR</span>
+              <span id="led-rl" class="contact-led active">RL</span>
+              <span id="led-rr" class="contact-led active">RR</span>
+            </div>
+
+            <!-- Collapsible Bottom Quick Drawer -->
+            <div class="stage-bottom-drawer">
+              <div class="drawer-header">
+                <span class="drawer-title">📈 Real-time Telemetry Overlay</span>
+                <span class="drawer-status" id="live-sim-status">● SIMULATION ONLINE | 500 Hz Physics</span>
+              </div>
+              <div class="drawer-charts-grid">
+                <div class="drawer-chart-card">
+                  <span class="chart-tag">Episode Return & Reward</span>
+                  <div class="chart-wrapper-sm">
+                    <canvas id="chart-reward-mini"></canvas>
+                  </div>
+                </div>
+                <div class="drawer-chart-card">
+                  <span class="chart-tag">End-Effector Target Dist (mm)</span>
+                  <div class="chart-wrapper-sm">
+                    <canvas id="chart-distance-mini"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+      <!-- =================================================================== -->
+      <!-- PAGE 2: SERVO & JOINT KINEMATICS (Full Screen Dedicated Page)       -->
+      <!-- =================================================================== -->
+      <div id="page-servos" class="app-page">
+        <div class="page-content-wrapper">
+          <div class="page-header-row">
+            <div>
+              <h2 class="page-heading">🦾 8-Joint Servo Telemetry & Actuator Diagnostics</h2>
+              <p class="page-subheading">Live MG90S position tracking, torque load, non-linear gear backlash, and first-order motor lag.</p>
+            </div>
+          </div>
+
+          <!-- 8 Servo Grid Cards -->
+          <div class="servos-grid-full" id="servos-list">
+            <!-- Dynamically populated 8 joint servo cards -->
+          </div>
+
+          <!-- Live Actuator Diagnostics Table -->
+          <div class="table-card">
+            <h3 class="card-section-title">⚙️ Real-time Actuator Error & Load Matrix</h3>
+            <div class="table-scroll-container">
+              <table class="finnova-table">
+                <thead>
+                  <tr>
+                    <th>Joint / Actuator</th>
+                    <th>Current Angle</th>
+                    <th>Target Command</th>
+                    <th>Tracking Error</th>
+                    <th>Torque Load (N·m)</th>
+                    <th>Servo Backlash Status</th>
+                  </tr>
+                </thead>
+                <tbody id="actuator-table-body">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- =================================================================== -->
+      <!-- PAGE 3: AI POLICY & ANALYTICS (Full Screen Analytics Suite)         -->
+      <!-- =================================================================== -->
+      <div id="page-analytics" class="app-page">
+        <div class="page-content-wrapper">
+          <div class="page-header-row">
+            <div>
+              <h2 class="page-heading">📈 AI Policy Execution & Benchmark Analytics</h2>
+              <p class="page-subheading">Deep Reinforcement Learning (PPO / SAC) reward progression, gait tracking metrics, and sim-to-real gap evaluation.</p>
+            </div>
+            <button class="primary-gradient-btn" onclick="runQuickBenchmark()">🚀 Run Benchmark Evaluation</button>
+          </div>
+
+          <!-- Analytics KPI Cards -->
+          <div class="analytics-kpi-row">
+            <div class="bench-stat-card">
+              <div class="bench-stat-header">PPO 60k Locomotion Policy</div>
+              <div class="bench-stat-num text-purple">+2,240.9</div>
+              <div class="bench-stat-sub">Mean Episode Return (+293% gain)</div>
+            </div>
+
+            <div class="bench-stat-card">
+              <div class="bench-stat-header">Autonomous Forward Speed</div>
+              <div class="bench-stat-num text-cyan">23.4 cm/s</div>
+              <div class="bench-stat-sub">Forward Translational Gait Speed</div>
+            </div>
+
+            <div class="bench-stat-card">
+              <div class="bench-stat-header">Upright Posture Score</div>
+              <div class="bench-stat-num text-green">1.00 / 1.00</div>
+              <div class="bench-stat-sub">0% Fall Rate across 20 Epochs</div>
+            </div>
+
+            <div class="bench-stat-card">
+              <div class="bench-stat-header">Sim-to-Real Hardware Gap</div>
+              <div class="bench-stat-num text-orange">&lt; 3.8%</div>
+              <div class="bench-stat-sub">MG90S Backlash & Delay Invariance</div>
+            </div>
+          </div>
+
+          <!-- Full Size Analytics Charts Grid -->
+          <div class="full-charts-grid">
+            <div class="full-chart-card">
+              <h3>Live Step Reward & Episode Return Curve</h3>
+              <div class="chart-wrapper-lg">
+                <canvas id="chart-reward-full"></canvas>
+              </div>
+            </div>
+
+            <div class="full-chart-card">
+              <h3>End-Effector Reaching Error (mm)</h3>
+              <div class="chart-wrapper-lg">
+                <canvas id="chart-distance-full"></canvas>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- =================================================================== -->
+      <!-- PAGE 4: HARDWARE & SIM CONFIGURATION (Full Screen Settings)        -->
+      <!-- =================================================================== -->
+      <div id="page-settings" class="app-page">
+        <div class="page-content-wrapper">
+          <div class="page-header-row">
+            <div>
+              <h2 class="page-heading">⚙️ Hardware & Physics Simulation Configuration</h2>
+              <p class="page-subheading">Adjust MuJoCo environment friction, actuator dynamics parameters, and sim-to-real domain randomization parameters.</p>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            
+            <!-- Physics Environment Settings -->
+            <div class="settings-card">
+              <h3 class="card-section-title">🌱 Simulation Environment Arena</h3>
+              <div class="form-row">
+                <label>Terrain Surface</label>
+                <select id="select-env">
+                  <option value="testing_arena">Testing Arena (Flat Grid)</option>
+                  <option value="robotics_lab">Robotics Lab Floor</option>
+                  <option value="carpet_surface">Carpet (High Friction)</option>
+                  <option value="asphalt_outdoor">Asphalt (Rough Surface)</option>
+                </select>
+              </div>
+
+              <div class="form-row">
+                <label>Physics Decimation Rate</label>
+                <input type="text" value="500 Hz Physics (10 substeps @ 0.002s)" readonly>
+              </div>
+            </div>
+
+            <!-- Servo Actuator Settings -->
+            <div class="settings-card">
+              <h3 class="card-section-title">⚙️ MG90S Servo Dynamics Model</h3>
+              <div class="form-row">
+                <label>Servo Time Constant (Lag)</label>
+                <input type="text" value="20 ms (1st-order exponential lag)" readonly>
+              </div>
+
+              <div class="form-row">
+                <label>Gear Backlash</label>
+                <input type="text" value="±0.86° (Deadband hysteresis)" readonly>
+              </div>
+
+              <div class="form-row">
+                <label>Actuator Peak Torque Limit</label>
+                <input type="text" value="5.0 N (0.196 N·m motor torque)" readonly>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
