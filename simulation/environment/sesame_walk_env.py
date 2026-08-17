@@ -4,7 +4,7 @@ Gymnasium Locomotion Environment for Sesame Quadruped Robot (Autonomous Walking)
 Focuses on:
 - Fast forward locomotion tracking (+X velocity)
 - Phase-guided cyclic gait coordination (CPG Phase Clock)
-- Dynamic balance, anti-drift, and low-energy torque regularization
+- Hyper-strict quadruped gait rules (anti-drift, foot clearance, trot symmetry, posture bounds)
 """
 
 import os
@@ -32,7 +32,7 @@ class SesameWalkEnv(gym.Env):
     Gymnasium environment for Sesame quadruped autonomous walking locomotion.
     
     Action Space: Box(-1.0, 1.0, shape=(8,)) -> Continuous joint angle offsets around STAND pose.
-    Observation Space: Box(shape=(36,)) -> Joint angles, velocities, IMU orientation, base velocities, foot contacts, and 2D Phase Clock.
+    Observation Space: Box(shape=(37,)) -> Joint angles, velocities, IMU orientation, base velocities, foot contacts, and 2D Phase Clock.
     """
 
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 50}
@@ -68,6 +68,11 @@ class SesameWalkEnv(gym.Env):
         self.stand_pose = MUJOCO_STAND_RAD.copy()
         self.action_scale = 0.35  # ±0.35 rad (~20 deg) swing around stand pose
 
+        # Cache joint index maps for JOINT_NAMES order
+        self.qpos_indices = np.array([self.model.joint(name).qposadr[0] for name in JOINT_NAMES], dtype=np.int32)
+        self.qvel_indices = np.array([self.model.joint(name).dofadr[0] for name in JOINT_NAMES], dtype=np.int32)
+        self.act_indices = np.array([self.model.actuator(name.replace("_joint", "_actuator")).id for name in JOINT_NAMES], dtype=np.int32)
+
         # Actuator Bank (Parametric Non-Linear Servo Dynamics)
         self.actuator_bank = SesameActuatorBank() if use_actuator_model else None
 
@@ -76,7 +81,7 @@ class SesameWalkEnv(gym.Env):
             low=-1.0, high=1.0, shape=(8,), dtype=np.float32
         )
         
-        # Obs Dim = 8 (q) + 8 (dq) + 3 (euler) + 3 (linvel) + 3 (angvel) + 4 (contacts) + 4 (feet Z) + 1 (base Z) + 2 (Phase Clock) + 1 (target v) = 37
+        # Obs Dim = 37
         self.obs_dim = 37
         self.observation_space = spaces.Box(
             low=-np.inf, high=np.inf, shape=(self.obs_dim,), dtype=np.float32
@@ -89,11 +94,11 @@ class SesameWalkEnv(gym.Env):
 
     def _get_obs(self) -> np.ndarray:
         # 1. Joint positions normalized relative to stand pose
-        q_raw = self.data.qpos[7:15]
+        q_raw = self.data.qpos[self.qpos_indices]
         q_norm = (q_raw - self.stand_pose) / self.action_scale
         
         # 2. Joint velocities
-        dq = self.data.qvel[6:14] * 0.1
+        dq = self.data.qvel[self.qvel_indices] * 0.1
         
         # 3. Base orientation (Euler roll, pitch, yaw)
         w, x, y, z = self.data.qpos[3:7]
@@ -106,7 +111,7 @@ class SesameWalkEnv(gym.Env):
         base_linvel = self.data.qvel[0:3]
         base_angvel = self.data.qvel[3:6] * 0.1
         
-        # 5. Foot ground contact states
+        # 5. Foot ground contact states & Z clearance
         foot_sites = ["fl_foot", "fr_foot", "rl_foot", "rr_foot"]
         contacts = []
         feet_z = []
@@ -114,7 +119,7 @@ class SesameWalkEnv(gym.Env):
             site_id = self.model.site(site_name).id
             z_pos = self.data.site_xpos[site_id][2]
             feet_z.append(z_pos)
-            contacts.append(1.0 if z_pos < 0.012 else 0.0)
+            contacts.append(1.0 if z_pos < 0.015 else 0.0)
             
         # 6. Periodic Gait Phase Clock (Explicit coordination signal)
         t = self.current_step * 0.02
@@ -129,9 +134,9 @@ class SesameWalkEnv(gym.Env):
             base_angvel,
             np.array(contacts, dtype=np.float64),
             np.array(feet_z, dtype=np.float64),
-            np.array([self.data.qpos[2]], dtype=np.float64),  # base Z height
-            clock,                                           # sin(phi), cos(phi)
-            np.array([self.target_velocity], dtype=np.float64), # target velocity command
+            np.array([self.data.qpos[2]], dtype=np.float64),
+            clock,
+            np.array([self.target_velocity], dtype=np.float64),
         ]).astype(np.float32)
         
         return obs
@@ -148,7 +153,7 @@ class SesameWalkEnv(gym.Env):
         
         mujoco.mj_resetData(self.model, self.data)
         
-        # Spawn standing at X=0, Y=0, Z=0.09
+        # Spawn standing upright at X=0, Y=0, Z=0.09m
         self.data.qpos[0] = 0.0
         self.data.qpos[1] = 0.0
         self.data.qpos[2] = 0.09
@@ -157,8 +162,8 @@ class SesameWalkEnv(gym.Env):
         noise = self.np_random.uniform(-0.02, 0.02, size=8)
         initial_q = np.clip(self.stand_pose + noise, self.joint_min, self.joint_max)
         for i in range(8):
-            self.data.qpos[7 + i] = initial_q[i]
-            self.data.ctrl[i] = initial_q[i]
+            self.data.qpos[self.qpos_indices[i]] = initial_q[i]
+        self.data.ctrl[self.act_indices] = initial_q
             
         if self.actuator_bank is not None:
             self.actuator_bank.reset(initial_q)
@@ -179,60 +184,86 @@ class SesameWalkEnv(gym.Env):
         substep_dt = self.model.opt.timestep
         for _ in range(self.frame_skip):
             if self.actuator_bank is not None:
-                curr_q = self.data.qpos[7:15]
-                curr_dq = self.data.qvel[6:14]
+                curr_q = self.data.qpos[self.qpos_indices]
+                curr_dq = self.data.qvel[self.qvel_indices]
                 eff_cmds, _ = self.actuator_bank.step(
                     target_q, curr_q, curr_dq, dt=substep_dt
                 )
-                self.data.ctrl[:] = eff_cmds
+                self.data.ctrl[self.act_indices] = eff_cmds
             else:
-                self.data.ctrl[:] = target_q
+                self.data.ctrl[self.act_indices] = target_q
             mujoco.mj_step(self.model, self.data)
             
         self.current_step += 1
         obs = self._get_obs()
         
         # ======================================================================
-        # WALKING LOCOMOTION REWARD FUNCTION (CPG + PROGRESS + SPEED TRACKING)
+        # HYPER-STRICT QUADRUPED LOCOMOTION REWARD FUNCTION (8 RULES)
         # ======================================================================
         curr_x = self.data.qpos[0]
-        vx = self.data.qvel[0]  # Forward velocity (+X)
-        vy = self.data.qvel[1]  # Lateral drift (Y)
+        vx = self.data.qvel[0]   # Forward velocity (+X)
+        vy = self.data.qvel[1]   # Lateral drift (Y)
+        wz = self.data.qvel[5]   # Yaw angular velocity (spinning)
         base_z = self.data.qpos[2]
         
-        # 1. Forward Displacement Progress Reward (+X)
+        # Rule 1: Strict Forward Progress (+300x scaling)
         delta_x = curr_x - self.prev_x
         self.prev_x = curr_x
-        r_progress = 120.0 * delta_x
+        r_progress = 300.0 * delta_x
         
-        # 2. Target Forward Speed Tracking (Bell-curve tracking)
-        r_speed = 10.0 * np.exp(-((vx - self.target_velocity) ** 2) / 0.015)
+        # Rule 2: Strict Forward Velocity Threshold (Heavy penalty for standing still!)
+        if vx < 0.05:
+            r_speed = -25.0  # Strict penalty for stationary / zero forward motion
+        else:
+            r_speed = 35.0 * np.exp(-((vx - self.target_velocity) ** 2) / 0.008)
         
-        # 3. Lateral Drift Penalty (Keep in straight lane)
-        r_drift = -4.0 * (vy ** 2)
+        # Rule 3: Strict Anti-Drift & Anti-Spin Rules
+        r_drift = -15.0 * (vy ** 2)    # Lateral drift penalty
+        r_spin = -10.0 * (wz ** 2)     # Yaw spin penalty
         
-        # 4. Upright & Heading Orientation Reward
+        # Rule 4: Strict Base Height Regulation (0.07m to 0.11m)
+        r_height = 0.0
+        if base_z < 0.070:
+            r_height = -15.0  # Crouching / sagging penalty
+        elif base_z > 0.110:
+            r_height = -10.0  # Bouncing / jumping penalty
+            
+        # Rule 5: Strict Posture & Level Orientation Bounds
         rot_mat = self.data.xmat[self.model.body("base_link").id].reshape(3, 3)
-        upright_factor = rot_mat[2, 2]  # Cosine with vertical
-        heading_factor = rot_mat[0, 0]  # Forward facing alignment
-        r_upright = 3.0 * upright_factor if upright_factor > 0.7 else -12.0
-        r_heading = 2.0 * max(0.0, heading_factor)
+        upright_factor = rot_mat[2, 2]  # Cosine with vertical (1.0 = level)
+        heading_factor = rot_mat[0, 0]  # Forward alignment
+        r_upright = 5.0 * upright_factor if upright_factor > 0.75 else -25.0
+        r_heading = 3.0 * max(0.0, heading_factor)
         
-        # 5. Energy and Smoothness Penalties
-        r_energy = -0.005 * np.sum(np.square(action))
-        r_smooth = -0.01 * np.sum(np.square(action - self.prev_action))
+        # Rule 6: Strict Feet Air Clearance (Stepping Height during swing)
+        foot_sites = ["fl_foot", "fr_foot", "rl_foot", "rr_foot"]
+        feet_z = [self.data.site_xpos[self.model.site(s).id][2] for s in foot_sites]
+        r_clearance = 0.0
+        for fz in feet_z:
+            if 0.015 < fz < 0.045:
+                r_clearance += 2.0  # Reward proper leg lifting during swing
+            elif fz > 0.050:
+                r_clearance -= 3.0  # Penalize lifting legs too high
+                
+        # Rule 7: Action Smoothness & Torque Limits
+        r_smooth = -0.05 * np.sum(np.square(action - self.prev_action))
+        r_energy = -0.01 * np.sum(np.square(action))
         self.prev_action = action.copy()
         
-        # 6. Survival Bonus
-        r_alive = 0.5
+        # Rule 8: Strict Motion Survival Bonus (Only awarded if moving forward)
+        r_alive = 2.0 if vx >= 0.05 else -5.0
         
-        reward = r_progress + r_speed + r_drift + r_upright + r_heading + r_energy + r_smooth + r_alive
+        # Total Weighted Reward
+        reward = (
+            r_progress + r_speed + r_drift + r_spin + r_height + 
+            r_upright + r_heading + r_clearance + r_smooth + r_energy + r_alive
+        )
         
-        # Termination conditions (Fall detection)
+        # Termination conditions (Strict Fall Detection)
         terminated = False
-        if base_z < 0.035 or upright_factor < 0.35:
+        if base_z < 0.040 or upright_factor < 0.50:
             terminated = True
-            reward -= 20.0  # Fall penalty
+            reward -= 50.0  # Severe fall termination penalty
             
         truncated = bool(self.current_step >= self.max_episode_steps)
         

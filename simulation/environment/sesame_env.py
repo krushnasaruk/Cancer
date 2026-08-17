@@ -69,11 +69,16 @@ class SesameEnv(gym.Env):
         
         self.dt = self.model.opt.timestep * self.frame_skip  # Control timestep (e.g. 0.002 * 10 = 0.02s / 50Hz)
         
-        # Joint limit arrays
-        self.joint_min = np.array([JOINT_LIMITS_RAD[name][0] for name in JOINT_NAMES], dtype=np.float64)
-        self.joint_max = np.array([JOINT_LIMITS_RAD[name][1] for name in JOINT_NAMES], dtype=np.float64)
+        # Joint Limits & Scaling (ordered by JOINT_NAMES)
+        self.joint_min = np.array([JOINT_LIMITS_RAD[j][0] for j in JOINT_NAMES], dtype=np.float64)
+        self.joint_max = np.array([JOINT_LIMITS_RAD[j][1] for j in JOINT_NAMES], dtype=np.float64)
         self.joint_mid = (self.joint_min + self.joint_max) / 2.0
         self.joint_range = (self.joint_max - self.joint_min) / 2.0
+        
+        # Cache joint index maps for JOINT_NAMES order
+        self.qpos_indices = np.array([self.model.joint(name).qposadr[0] for name in JOINT_NAMES], dtype=np.int32)
+        self.qvel_indices = np.array([self.model.joint(name).dofadr[0] for name in JOINT_NAMES], dtype=np.int32)
+        self.act_indices = np.array([self.model.actuator(name.replace("_joint", "_actuator")).id for name in JOINT_NAMES], dtype=np.int32)
         
         # Actuator bank
         self.actuator_bank = SesameActuatorBank() if use_actuator_model else None
@@ -122,11 +127,11 @@ class SesameEnv(gym.Env):
     def _get_obs(self) -> np.ndarray:
         """Construct the observation vector."""
         # 1. Joint positions normalized
-        q_raw = self.data.qpos[7:15]
+        q_raw = self.data.qpos[self.qpos_indices]
         q_norm = (q_raw - self.joint_mid) / self.joint_range
         
         # 2. Joint velocities
-        dq = self.data.qvel[6:14]
+        dq = self.data.qvel[self.qvel_indices]
         
         # 3. Base orientation (Euler angles roll, pitch, yaw)
         base_quat = self.data.qpos[3:7]  # [w, x, y, z]
@@ -183,8 +188,8 @@ class SesameEnv(gym.Env):
         noise = self.np_random.uniform(-0.05, 0.05, size=8)
         initial_q = np.clip(MUJOCO_STAND_RAD + noise, self.joint_min, self.joint_max)
         for i in range(8):
-            self.data.qpos[7 + i] = initial_q[i]
-            self.data.ctrl[i] = initial_q[i]
+            self.data.qpos[self.qpos_indices[i]] = initial_q[i]
+        self.data.ctrl[self.act_indices] = initial_q
             
         # Reset actuator bank
         if self.actuator_bank is not None:
@@ -216,14 +221,14 @@ class SesameEnv(gym.Env):
         substep_dt = self.model.opt.timestep
         for _ in range(self.frame_skip):
             if self.actuator_bank is not None:
-                curr_q = self.data.qpos[7:15]
-                curr_dq = self.data.qvel[6:14]
+                curr_q = self.data.qpos[self.qpos_indices]
+                curr_dq = self.data.qvel[self.qvel_indices]
                 eff_cmds, _ = self.actuator_bank.step(
                     target_joint_angles, curr_q, curr_dq, dt=substep_dt
                 )
-                self.data.ctrl[:] = eff_cmds
+                self.data.ctrl[self.act_indices] = eff_cmds
             else:
-                self.data.ctrl[:] = target_joint_angles
+                self.data.ctrl[self.act_indices] = target_joint_angles
                 
             mujoco.mj_step(self.model, self.data)
             
@@ -233,12 +238,26 @@ class SesameEnv(gym.Env):
         # ======================================================================
         # MODULAR REWARD FUNCTION
         # ======================================================================
-        # 1. Distance Reward (Reaching distance from Front-Left foot site to target)
-        fl_foot_pos = self.data.site_xpos[self.model.site("fl_foot").id]
-        dist_to_target = np.linalg.norm(fl_foot_pos - self.target_pos)
-        r_dist = -25.0 * dist_to_target + 35.0 * np.exp(-50.0 * (dist_to_target**2))
-        if dist_to_target < 0.025:
-            r_dist += 50.0  # +50 precision touch bonus
+        # 1. Distance Reward (Reaching distance from nearest front foot FL/FR to target)
+        fl_pos = self.data.site_xpos[self.model.site("fl_foot").id]
+        fr_pos = self.data.site_xpos[self.model.site("fr_foot").id]
+        dist_fl = np.linalg.norm(fl_pos - self.target_pos)
+        dist_fr = np.linalg.norm(fr_pos - self.target_pos)
+        dist_to_target = float(min(dist_fl, dist_fr))
+        
+        r_dist = -25.0 * dist_to_target + 45.0 * np.exp(-50.0 * (dist_to_target**2))
+        if dist_to_target < 0.035:
+            r_dist += 100.0  # +100 precision touch bonus!
+            # Auto-respawn target to a new random location in front of robot
+            base_p = self.data.qpos[0:3]
+            self.target_pos = base_p + np.array([
+                self.np_random.uniform(0.08, 0.16),
+                self.np_random.uniform(-0.10, 0.10),
+                self.np_random.uniform(0.02, 0.08),
+            ], dtype=np.float64)
+            target_mocap_id = self.model.body("target_marker").mocapid[0]
+            if target_mocap_id >= 0:
+                self.data.mocap_pos[target_mocap_id] = self.target_pos
         
         # 2. Control Energy Penalty
         r_ctrl = -0.01 * np.sum(np.square(action))

@@ -84,6 +84,20 @@ class SACPolicy:
         noise = self.rng.normal(0.0, 1.0, size=self.act_dim)
         return np.clip(mu + std * noise, -1.0, 1.0)
 
+    def update(self, batch: dict, lr: float = 3e-4):
+        obs = batch["obs"]
+        act = batch["act"]
+        rew = batch["rew"]
+        
+        h1 = np.tanh(obs @ self.w1 + self.b1)
+        h2 = np.tanh(h1 @ self.w2 + self.b2)
+        mu = np.tanh(h2 @ self.w_mu + self.b_mu)
+        
+        diff = act - mu
+        grad_mu = (rew * diff) / obs.shape[0]
+        self.w_mu += lr * (h2.T @ grad_mu)
+        self.b_mu += lr * np.mean(grad_mu, axis=0)
+
     def save(self, filepath: str):
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         np.savez_compressed(
@@ -106,6 +120,8 @@ class SACPolicy:
 def train_sac(
     total_timesteps: int = 15000,
     save_dir: str = "results/sac",
+    lr: float = 3e-4,
+    seed: int = 42,
 ) -> dict:
     """Train Soft Actor-Critic (SAC) baseline on Sesame Reaching."""
     os.makedirs(save_dir, exist_ok=True)
@@ -144,7 +160,7 @@ def train_sac(
             ep_returns.append(current_ep_return)
             if ep_count % 5 == 0:
                 mean_ret = float(np.mean(ep_returns[-5:]))
-                print(f"Episode {ep_count:3d} | Step {t:6d} | Return: {mean_ret:8.2f} | Target Dist: {info['dist_to_target']:.4f} m")
+                print(f"Episode {ep_count:3d} | Step {t:6d} | Return: {mean_ret:8.2f} | Target Dist: {info['dist_to_target']:.4f} m", flush=True)
             current_ep_return = 0.0
             obs, _ = env.reset()
             

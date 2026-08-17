@@ -158,7 +158,7 @@ def train_locomotion(
         training_log["mean_x_displacement_m"].append(mean_d)
         training_log["total_timesteps"].append(t_global)
         
-        print(f"Epoch {epoch + 1:3d}/{num_epochs} | Steps: {t_global:6d} | Return: {mean_ret:7.1f} | Fwd Speed: {mean_v * 100:.1f} cm/s | Dist: {mean_d * 100:.1f} cm")
+        print(f"Epoch {epoch + 1:3d}/{num_epochs} | Steps: {t_global:6d} | Return: {mean_ret:7.1f} | Fwd Speed: {mean_v * 100:.1f} cm/s | Dist: {mean_d * 100:.1f} cm", flush=True)
         
     policy_path = os.path.join(save_dir, "ppo_walk_policy.npz")
     policy.save(policy_path)

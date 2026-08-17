@@ -295,7 +295,7 @@ def train_ppo(
         training_log["mean_distance_to_target"].append(mean_dist)
         training_log["total_timesteps"].append(t_global)
         
-        print(f"Epoch {epoch + 1:3d}/{num_epochs} | Steps: {t_global:6d} | Return: {mean_ret:8.2f} | Target Dist: {mean_dist:.4f} m")
+        print(f"Epoch {epoch + 1:3d}/{num_epochs} | Steps: {t_global:6d} | Return: {mean_ret:8.2f} | Target Dist: {mean_dist:.4f} m", flush=True)
         
     # Save trained checkpoint and logs
     policy_path = os.path.join(save_dir, "ppo_policy.npz")

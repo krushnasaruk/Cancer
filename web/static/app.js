@@ -216,6 +216,11 @@ function switchPage(pageId) {
     targetPage.classList.add("active");
     if (pageId === "page-twin") {
       setTimeout(onResize, 50);
+    } else if (pageId === "page-analytics") {
+      setTimeout(() => {
+        if (chartRewardFull) chartRewardFull.update();
+        if (chartDistFull) chartDistFull.update();
+      }, 50);
     }
   }
 }
@@ -263,22 +268,25 @@ function initCharts() {
 
 function pushChart(t, ret, dist) {
   const chartGroup = [
-    { reward: chartRewardMini, dist: chartDistMini },
-    { reward: chartRewardFull, dist: chartDistFull }
+    { reward: chartRewardMini, dist: chartDistMini, canvas: document.getElementById("chart-reward-mini") },
+    { reward: chartRewardFull, dist: chartDistFull, canvas: document.getElementById("chart-reward-full") }
   ];
 
   chartGroup.forEach(g => {
+    // Only update if the chart's canvas is currently visible in the DOM
+    const isVisible = g.canvas && g.canvas.offsetParent !== null;
+
     if (g.reward) {
       if (g.reward.data.labels.length > MAX_PTS) { g.reward.data.labels.shift(); g.reward.data.datasets[0].data.shift(); }
       g.reward.data.labels.push(t);
       g.reward.data.datasets[0].data.push(ret);
-      g.reward.update();
+      if (isVisible) g.reward.update("none");
     }
     if (g.dist) {
       if (g.dist.data.labels.length > MAX_PTS) { g.dist.data.labels.shift(); g.dist.data.datasets[0].data.shift(); }
       g.dist.data.labels.push(t);
       g.dist.data.datasets[0].data.push(dist);
-      g.dist.update();
+      if (isVisible) g.dist.update("none");
     }
   });
 }
@@ -292,6 +300,8 @@ function connectWS() {
   ws.onopen = () => {
     const el = document.getElementById("live-sim-status");
     if (el) { el.textContent = "● SIMULATION ONLINE | 500 Hz Physics"; el.style.color = "#10b981"; }
+    const selectVal = document.getElementById("select-controller")?.value;
+    if (selectVal) onControllerChange(selectVal);
   };
   ws.onmessage = (e) => updateUI(JSON.parse(e.data));
   ws.onclose = () => {
@@ -322,8 +332,8 @@ function updateUI(d) {
     });
   }
 
-  if (targetMesh && d.target && d.base) {
-    targetMesh.position.set(d.base.x + d.target.x, d.base.y + d.target.y, d.target.z + 0.065);
+  if (targetMesh && d.target) {
+    targetMesh.position.set(d.target.x, d.target.y, d.target.z + 0.005);
   }
 
   // KPI Mini Cards

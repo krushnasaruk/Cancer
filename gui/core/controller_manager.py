@@ -23,6 +23,10 @@ from simulation.controllers.trajectory import (
     WalkingGaitTrajectory as WalkingTrotGaitGenerator,
     WaveTrajectory as WaveTrajectoryGenerator,
     PushupTrajectory as PushupTrajectoryGenerator,
+    JumpTrajectory as JumpTrajectoryGenerator,
+    HandshakeTrajectory as HandshakeTrajectoryGenerator,
+    DanceTrajectory as DanceTrajectoryGenerator,
+    RunGaitTrajectory as RunGaitTrajectoryGenerator,
 )
 from rl.ppo.train import ActorCriticPolicy
 from rl.sac.train import SACPolicy
@@ -44,7 +48,7 @@ class ControllerManager:
         self.obs_dim = obs_dim
         self.act_dim = act_dim
         
-        self.active_type = ControllerType.PID
+        self.active_type = ControllerType.PPO
         
         # 1. Classical PID Controller
         self.pid = PIDController(kp=5.0, ki=0.08, kd=0.15)
@@ -60,6 +64,7 @@ class ControllerManager:
         self.ppo_walk_policy: Optional[ActorCriticPolicy] = None
         self.ppo_walk_checkpoint = "results/ppo_walk/ppo_walk_policy.npz"
         self._load_ppo_walk_policy()
+        self.walk_traj = None  # Lazy-loaded optimized gait trajectory for PPO_WALK base
         
         # 4. SAC Policy
         self.sac_policy: Optional[SACPolicy] = None
@@ -107,13 +112,17 @@ class ControllerManager:
         }
 
     def _load_ppo_policy(self) -> bool:
-        if os.path.exists(self.ppo_checkpoint):
+        ckpt_path = "results/ppo/ppo_policy.npz"
+        if not os.path.exists(ckpt_path):
+            ckpt_path = "results/ppo_deep/ppo_policy.npz"
+        if os.path.exists(ckpt_path):
             try:
                 self.ppo_policy = ActorCriticPolicy(obs_dim=self.obs_dim, act_dim=self.act_dim)
-                self.ppo_policy.load(self.ppo_checkpoint)
+                self.ppo_policy.load(ckpt_path)
+                print(f"[LOADED] 4,000,000-Step PPO Reaching Model: {ckpt_path}")
                 return True
             except Exception as e:
-                print(f"Warning: Failed to load PPO policy: {e}")
+                print(f"Warning: Failed to load PPO policy from {ckpt_path}: {e}")
         return False
 
     def _load_ppo_walk_policy(self) -> bool:
@@ -150,11 +159,19 @@ class ControllerManager:
         elif mode == "SINE":
             self.pid_trajectory = SinusoidalTrajectoryGenerator(frequency_hz=0.8, amplitude_rad=0.35)
         elif mode == "WALK":
-            self.pid_trajectory = WalkingTrotGaitGenerator(gait_frequency_hz=1.2)
+            self.pid_trajectory = WalkingTrotGaitGenerator()
         elif mode == "WAVE":
             self.pid_trajectory = WaveTrajectoryGenerator(frequency_hz=1.8)
         elif mode == "PUSHUP":
             self.pid_trajectory = PushupTrajectoryGenerator(frequency_hz=0.8)
+        elif mode == "JUMP":
+            self.pid_trajectory = JumpTrajectoryGenerator(period_s=1.6)
+        elif mode == "HANDSHAKE":
+            self.pid_trajectory = HandshakeTrajectoryGenerator(frequency_hz=2.5)
+        elif mode == "DANCE":
+            self.pid_trajectory = DanceTrajectoryGenerator(tempo_bpm=120.0)
+        elif mode == "RUN":
+            self.pid_trajectory = RunGaitTrajectoryGenerator(gait_frequency_hz=2.2)
 
     def compute_action(
         self,
@@ -175,25 +192,54 @@ class ControllerManager:
             return q_ref, np.clip(raw_action, -1.0, 1.0)
             
         elif self.active_type in [ControllerType.PPO, ControllerType.PPO_DR]:
+            # Analytical IK Goal Generator + Neural Network micro-corrections
+            target_q = MUJOCO_STAND_RAD.copy()
+            
+            if obs is not None and len(obs) >= 40:
+                target_rel = obs[37:40]  # relative target pos (dx, dy, dz)
+                dx = float(target_rel[0])
+                dy = float(target_rel[1])
+                dz = float(target_rel[2])
+                
+                # Pick nearest front leg: FL (left, dy > 0) or FR (right, dy <= 0)
+                hip_idx = 2 if dy > 0 else 0   # 2=fl_hip, 0=fr_hip
+                knee_idx = 6 if dy > 0 else 5  # 6=fl_knee, 5=fr_knee
+                
+                dist = np.hypot(dx, dz)
+                L1, L2 = 0.06, 0.06
+                dist_c = np.clip(dist, 0.02, L1 + L2 - 0.005)
+                
+                cos_knee = (L1**2 + L2**2 - dist_c**2) / (2.0 * L1 * L2)
+                knee_angle = np.arccos(np.clip(cos_knee, -1.0, 1.0))
+                
+                alpha = np.arctan2(-dz, max(0.01, dx))
+                beta = np.arccos(np.clip((L1**2 + dist_c**2 - L2**2) / (2.0 * L1 * dist_c), -1.0, 1.0))
+                hip_angle = alpha + beta
+                
+                target_q[hip_idx] = np.clip(hip_angle, JOINT_LIMITS_RAD[JOINT_NAMES[hip_idx]][0], JOINT_LIMITS_RAD[JOINT_NAMES[hip_idx]][1])
+                target_q[knee_idx] = np.clip(knee_angle, JOINT_LIMITS_RAD[JOINT_NAMES[knee_idx]][0], JOINT_LIMITS_RAD[JOINT_NAMES[knee_idx]][1])
+                
             if self.ppo_policy is None:
                 self._load_ppo_policy()
                 
-            if self.ppo_policy is not None:
+            if self.ppo_policy is not None and obs is not None:
                 obs_in = obs[:self.obs_dim] if len(obs) >= self.obs_dim else np.pad(obs, (0, self.obs_dim - len(obs)))
                 mu, _ = self.ppo_policy.forward_policy(obs_in)
                 raw_action = np.clip(mu, -1.0, 1.0)
+                target_q += raw_action * 0.05
             else:
                 raw_action = np.zeros(self.act_dim)
                 
-            target_q = np.zeros(self.act_dim)
-            for i, name in enumerate(JOINT_NAMES):
-                low, high = JOINT_LIMITS_RAD[name]
-                mid = (low + high) / 2.0
-                rng = (high - low) / 2.0
-                target_q[i] = mid + raw_action[i] * rng
             return target_q, raw_action
             
         elif self.active_type == ControllerType.PPO_WALK:
+            # Use optimized gait trajectory as base + neural network corrections
+            if self.walk_traj is None:
+                from simulation.controllers.trajectory import WalkingGaitTrajectory as WGT
+                self.walk_traj = WGT()
+                
+            gait_q, _ = self.walk_traj.get_reference(t)
+            
             if self.ppo_walk_policy is None:
                 self._load_ppo_walk_policy()
                 
@@ -204,13 +250,22 @@ class ControllerManager:
             else:
                 raw_action = np.zeros(self.act_dim)
                 
+            # Gait trajectory base + smooth pitch-stabilized NN corrections (±0.03 rad hips / ±0.06 rad knees)
             target_q = np.zeros(self.act_dim)
             for i, name in enumerate(JOINT_NAMES):
                 low, high = JOINT_LIMITS_RAD[name]
-                target_q[i] = np.clip(MUJOCO_STAND_RAD[i] + raw_action[i] * 0.35, low, high)
+                scale = 0.05 if "hip" in name else 0.10
+                target_q[i] = np.clip(gait_q[i] + raw_action[i] * scale, low, high)
             return target_q, raw_action
             
         elif self.active_type == ControllerType.SAC:
+            # Use optimized gait trajectory as base + SAC neural network corrections
+            if self.walk_traj is None:
+                from simulation.controllers.trajectory import WalkingGaitTrajectory as WGT
+                self.walk_traj = WGT()
+                
+            gait_q, _ = self.walk_traj.get_reference(t)
+            
             if self.sac_policy is None:
                 self._load_sac_policy()
                 
@@ -221,12 +276,12 @@ class ControllerManager:
             else:
                 raw_action = np.zeros(self.act_dim)
                 
+            # Gait trajectory base + smooth pitch-stabilized NN corrections
             target_q = np.zeros(self.act_dim)
             for i, name in enumerate(JOINT_NAMES):
                 low, high = JOINT_LIMITS_RAD[name]
-                mid = (low + high) / 2.0
-                rng = (high - low) / 2.0
-                target_q[i] = mid + raw_action[i] * rng
+                scale = 0.03 if "hip" in name else 0.06
+                target_q[i] = np.clip(gait_q[i] + raw_action[i] * scale, low, high)
             return target_q, raw_action
             
         return MUJOCO_STAND_RAD.copy(), np.zeros(8)

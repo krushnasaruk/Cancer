@@ -42,4 +42,5 @@ Thumbs.db
 # Build artifacts & temp files
 *.whl
 test_output.txt
+scratch/
 
